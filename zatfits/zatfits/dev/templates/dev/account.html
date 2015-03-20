@@ -1,0 +1,16 @@
+{% extends "dev/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+<body>
+{% if user.is_authenticated %}
+<p>
+Votre email : {{ user.email }}<br/>
+Votre prenom: {{ user.first_name }}<br/>
+Votre nom: {{ user.last_name }}<br/>
+</p>
+
+{% endif %}
+</body>
+{% endblock %}

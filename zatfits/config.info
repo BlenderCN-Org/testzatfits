@@ -1,0 +1,32 @@
+Document à modifier pour configurer son environnement 
+
+Dans Zatfits/zatfits 
+
+ishoutconf.json (changer l'IP de votre VM serveur)
+startup.sh (changer l'IP de votre VM serveur)
+
+Dans Zatfits/zatfits/zatfits
+
+usersettings.py (Changer les repertoires de travail + l'IP du serveur)
+
+
+
+Dans /Zatfits/servers/makehuman
+
+makehuman.py (Changer le repertoire d'executiion de python dans le head du fichier)
+
+Dans /Zatfits/servers/envs/mainenv/ 
+
+fichier activate : VIRTUAL_ENV="repertoiredudepot/Zatfits/envs/mainenv"
+
+
+
+Dans /Zatfits/servers/envs/mhenv/ 
+
+fichier activate : VIRTUAL_ENV="repertoiredudepot/Zatfits/envs/mhenv"
+
+
+
+Dans /Zatfits/servers/makehuman/ZTControler
+
+Changer les repertoires d'enregistrement des .obj et .mhm (fin de fichier)

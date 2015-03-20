@@ -1,0 +1,353 @@
+{% extends "dev/base.html" %}
+{% load staticfiles %}
+{% block content %}
+<head>
+
+
+
+</head>
+<body onload="initialize()">
+    <div class="container">
+        <div class="header-wrapper">
+            <div class="container-fluid">
+                <div class="row-fluid">
+                    <div class="col-md-8" style="margin-bottom:10px;">
+                        <!-- Div contenant le rendu WebGl -->
+
+                        <div class="centervideo" , id="rendererWEBGL">
+                        </div>
+
+                    </div>
+                    <div class="col-md-4">
+                        <div class="well rightsidebar sm-gutter" >
+
+
+                               <br>
+
+                                <h2 style="margin-top:-15px; margin-left:15px;">Personalisation </h2>
+                            </div>
+                            <form action="/validate" method="post" id="main-form">
+                                {% csrf_token %}
+                                <div id="superDivId" >
+                                    <!-- Contains the primary parameters -->
+                                    <div class="well sm-gutter">
+                                        <div class="row">
+                                            <div class="col-xs-3 " style="min-width: 10ch; margin-bottom: 3px">
+                                                Sexe :
+                                            </div>
+                                            <div class="col-xs-8 " style="margin-top:-5px;">
+                                                <select class="form-control"  id="id_Gender"
+                                                        onchange="loadParams()">
+                                                    <option value="1">Masculin</option>
+                                                    <option value="0">Feminin</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <br/> <br/>
+
+                                        <div class="row">
+                                            <div class="col-xs-3" style="min-width: 10ch; margin-bottom: 3px">
+                                                Sport:
+                                            </div>
+                                            <div class="col-xs-8" style="margin-top:-5px;">
+                                                <select class="form-control" id="id_Option"
+                                                        onchange="loadParams()">
+                                                    <option value="Surf">Surf</option>
+                                                    <option value="Running">Running</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <br/> <br/>
+
+                                        <div class="row">
+                                            <div class="col-xs-3" style="min-width: 10ch; margin-bottom: 3px">
+                                                Detail:
+                                            </div>
+                                            <div  class="col-xs-8" style="margin-top:-5px;">
+                                                <select class="form-control" id="id_Detail"
+                                                        onchange="loadParams()">
+                                                    <option value="Low">Low</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <br/> <br/>
+
+                                        <div class="row">
+                                            <div class="col-xs-3" style="min-width: 10ch; margin-bottom: 3px">
+                                                Units :
+                                            </div>
+                                            <div class="col-xs-8" style="margin-top:-5px;">
+                                                <select class="form-control" id="id_Metric"
+                                                        onchange="loadParams()">
+                                                    <option value="1">Metric</option>
+                                                    <option value="0">Imperial</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- This div contains the parameters generated from the ones above -->
+                                    <div id="parentDivId" class="well sm-gutter"></div>
+
+                                </div>
+
+                            </form>
+
+
+                            <!-- script that checks and sets if necessary the parameter values and creates the json to post -->
+                            <script type="text/javascript" src="{% static 'web/scripts/jsonPost.js' %}"></script>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <script type="text/javascript" src="{% static 'web/js/index.js' %}"></script>
+
+            <!-- Bibliotheque Three.js   -->
+            <script type="text/javascript" src="{% static 'web/js/three/build/three.js' %}"></script>
+            <!-- Gestion de la souris -->
+            <script type="text/javascript" src="{% static 'web/js/three/examples/js/controls/OrbitControls.js' %}"></script>
+            <script type="text/javascript" src="{% static 'web/js/three/examples/js/controls/TrackballControls.js' %}"></script>
+
+            <!-- Pour la detection de si on peut utiliser le WebGL -->
+            <script type="text/javascript" src="{% static 'web/js/three/examples/js/Detector.js' %}"></script>
+            <!-- Pour le chargement d'objet collada -->
+            <script type="text/javascript" src="{% static 'web/js/three/examples/js/loaders/ColladaLoader.js' %}"></script>
+
+            <document type="xml" src="selectors.xml" id="select"></document>
+            <script type="text/javascript">
+                //This is used to define the correct paths in the following functions. The 3d model loaded DEPENDS ON IT!
+
+                var address="../private/user_models/{{user.id}}/{{user.id}}.dae ";
+                var model_info_address="../private/user_models/{{user.id}}/{{user.id}}.xml ";
+                var default_address="{% static 'web/files/humanMale.dae' %}";
+            </script>
+
+            <script>
+                $(function(){
+                    function loadXML(){
+                    xhttp= new XMLHttpRequest();
+                    xhttp.open('GET',"{% static 'web/properties/selectors.xml' %}",false);
+                    xhttp.send();
+                    return xhttp.responseXML;
+                    };
+
+                    //This functions cascade-call is used to retrieve previous entered user data
+                    $(function loadUserXML(){
+                        //if the xml file exists
+                            if(model_info_address ){
+                            //we get everithing in it
+                                $.get(model_info_address,function(d){
+                                    // For each key found, we set the corresponding dropdown
+                                    $(d).find('key').each(function(){
+                                        dropdownname="id_"+$(this).attr('name');
+                                        $("#"+dropdownname).val($(this).attr('value'));
+                                    })
+
+                                }).done(function(){
+
+                                    loadParams();
+
+                                    if(model_info_address ){
+                                        $.get(model_info_address,function(d){
+
+                                            // For each var found, we set the corresponding slider
+                                            $(d).find('var').each(function(){
+
+                                                dropdownname="#id_"+$(this).attr('name');
+                                                val=$(this).attr('value');
+                                                $(dropdownname).val(val);
+                                                //This is used to know if the input is a slider or a dropdown
+                                                if($(dropdownname).prop('tagName')=="INPUT"){
+                                                    $(dropdownname).slider('setValue', val);
+                                                }
+
+                                            })
+                                        })
+                                    };
+                                });
+                            };
+
+                     });
+
+                });
+
+                function loadParams(){
+                //Try block used to reset the form
+                try{
+                    document.getElementById("superDivId").removeChild(document.getElementById("parentDivId"));
+                }
+                catch(err){}
+
+                // This block is used to get the 3 parameters
+                var gender;
+                var unit;
+
+                // the primary parameters are extracted from the components
+
+                genderBool = $( "#id_Gender option:selected" ).val();
+                option = $( "#id_Option option:selected" ).val();
+                detail = $( "#id_Detail option:selected" ).val();
+                metricBool = $( "#id_Metric option:selected" ).val();
+
+                if(genderBool==1){gender="Male";}
+                else{gender="Female";}
+
+                if(metricBool==1){unit="Metric";}
+                else{unit="Imperial";}
+
+                // this variable is used to tell if there is a form corresponding to the primary parameters in the xml file
+                var bool="false";
+
+                // sets a bool to know if on mobile or desktop
+                var mobile="false";
+                if(detectmob()){
+                    mobile="true";
+                }
+
+                // creation of the div in which the form parameters will be inserted
+                var div = document.createElement("DIV");
+                div.setAttribute("id","parentDivId");
+                div.setAttribute("class","well sm-gutter");
+                document.getElementById("superDivId").appendChild(div);
+
+                //This get is used to load the xml describing the different possible forms
+                $.get("{% static 'web/properties/selectors.xml' %}",function(d){
+
+                     $(d).find('bodyparams').each(function(){
+                     //For each bodyparam, verify if the 3 sliders correspond
+
+                        var $params = $(this);
+
+                        if ($params.attr('gender')==gender && $params.attr('option')==option && $params.attr('detail')==detail && $params.attr('unit')==unit) {
+
+                            // bool is used to check if a corresponding body type is found in the XML file
+                            bool="true";
+
+                            $params.find('dropdown').each(function(){
+                            //When the correct bodyparam is found, we create the inputs
+
+                                var min = parseInt($(this).find('min').text());             // min
+                                var max = parseInt($(this).find('max').text());             // max
+                                var step = parseInt($(this).find('step').text());           // step
+                                var name = ($(this).find('name').text());                   // name
+                                var input_type = ($(this).find('input_type').text());       // type of input. ex: select
+                                var default_value = parseInt($(this).find('value').text()); // value to which is set input
+                                var unit_name = ($(this).find('unit_name').text());         // name of param unit. ex: cm
+
+
+
+                                // Here starts the html code fill up
+                                var htmlCode = "<div class=\"row\" style=\"padding: 8px 0px;\">";
+
+                                // if the input is to be a slider, we create an input and a label that displays the slider value
+                                if(input_type=="slider" && mobile=="false"){
+                                    htmlCode +="<span class=\"col-xs-4\" id=\"id_"+name+"_label\"></span>";
+                                    htmlCode +="<div class=\"col-xs-8\">";
+                                    htmlCode+=      "<input type=\"text\" ";
+                                    htmlCode+=          "id=\"id_"+name+"\" data-slider-min="+min+" data-slider-max="+max+" ";
+                                    htmlCode+=              "data-slider-step="+step+" value="+default_value+" </input>";
+                                    htmlCode +="</div>"
+
+
+
+                                }
+                                // if the input is to be a select, we create a select and fill in the different options
+                                else if(input_type=="select" || mobile=="true"){
+                                    htmlCode +=     "<div  class=\"col-xs-3\" style=\"min-width: 10ch; margin-bottom: 3px\">"+name+" in "+unit_name+"</div>";
+                                    htmlCode +=     "<div  class=\"col-xs-8\">";
+                                    htmlCode +=             "<select class=\"form-control\" style=\"margin-top:-5px;\" id=\"id_"+name+"\">";
+                                        for(j=min;j<max;j+=1){
+
+                                            // if the option value is the one to be displayed by default we set is as selected
+                                            if(j==default_value){
+                                                htmlCode +=        "<option selected=\"selected\">"+j+"</option>";
+                                            }else{
+                                                htmlCode +=        "<option>"+j+"</option>";
+                                            }
+                                        }
+                                    htmlCode +=              "</select>";
+                                    htmlCode +=     "</div>";
+
+                                }
+
+                                // Closes the row
+                                htmlCode +=     "</div>";
+
+
+                                // finally we insert the html code in the div
+                                document.getElementById("parentDivId").innerHTML += htmlCode;
+
+
+
+                            });
+
+                            // Here we add the "validate" button
+                            htmlCode =   "<button class=\"btn btn-primary\" style=\"padding:10px\">Valider</button>";
+                            document.getElementById("parentDivId").innerHTML += htmlCode;
+                        }
+
+                    });
+
+                    // Outputs if the combination of primary parameters are present in the XML file
+                    if (bool=="false"){
+                        var htmlCode="Erreur: aucun sélecteur n'est disponible pour ces options";
+                        document.getElementById("parentDivId").innerHTML += htmlCode;
+
+                    }
+
+                    // the following code sets the slider inputs  as active sliders / concerns desktop only
+                    if(mobile=="false"){
+                        $(d).find('bodyparams').each(function(){
+                         //For each bodyparam, verify if the 3 sliders correspond
+                            var $params = $(this);
+                            if ($params.attr('gender')==gender && $params.attr('option')==option && $params.attr('detail')==detail && $params.attr('unit')==unit) {
+                                bool="true";
+                                $params.find('dropdown').each(function(){
+                                //When it does, load the different dropdowns
+
+                                    // if the input is meant to be a slider it is then set as a slider
+                                    if( ($(this).find('input_type').text()).toLowerCase()=="slider" ){
+                                        var default_value = parseInt($(this).find('value').text());
+                                        var name = ($(this).find('name').text());
+                                        var unit_name = ($(this).find('unit_name').text());
+
+                                        // The eval function is used to access dynamically the name of the input
+                                        // to set the sliders and labels
+                                        eval("$('#id_"+name+"').slider({value:"+default_value+", tooltip:'hide', formater: function(value){document.getElementById(\"id_"+name+"_label\").innerHTML='"+name+":</br><strong>'+value+'</strong> "+unit_name+"'; return value +' "+unit_name+"'; }})");
+
+                                    }
+
+                                });
+                            }
+                        });
+                    }
+
+                });
+            }
+
+            // this function detects the type of browser used and deduces if the used device is a phone/tablet
+            function detectmob() {
+                if( navigator.userAgent.match(/Android/i)
+                || navigator.userAgent.match(/webOS/i)
+                || navigator.userAgent.match(/iPhone/i)
+                || navigator.userAgent.match(/iPad/i)
+                || navigator.userAgent.match(/iPod/i)
+                || navigator.userAgent.match(/BlackBerry/i)
+                || navigator.userAgent.match(/Windows Phone/i)
+                ){
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+
+            </script>
+
+            <script type="text/javascript" src="{% static 'web/scripts/WebGL.js' %}"></script>
+            {% endblock %}
+        </div>
+    </div>
+</body>

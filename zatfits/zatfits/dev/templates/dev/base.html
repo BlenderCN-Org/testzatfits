@@ -1,0 +1,150 @@
+{% load staticfiles %}
+{% load drealtimetags %}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    {% ishout_js %}
+    <title>Zatfits</title>
+    <link href="{% static 'web/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'web/css/slider.css' %}" rel="stylesheet">
+    <script type="text/javascript" src='{% static "web/js/jquery-2.1.1.min.js" %}'></script>
+    <script src="{% static 'web/js/bootstrap-slider.js' %}"></script>
+    <script src="{% static 'web/js/bootstrap.js' %}"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=places"></script>
+
+    <link rel="stylesheet" href="{% static 'web/css/style.css' %}" media="screen" type="text/css">
+
+
+    <script type="text/javascript">
+			console.log("Init ishout");
+			
+            ishout.on('help', function(data) {
+				//console.log("Coucou hibou");
+				//alert("New Model");
+				//resestAndAddObj("/media/{{ user.id }}.obj", "", "human");
+				//alert("/media/{{ user.id }}.dae")
+				//console.log(data.reload)
+				modifyAllVertex(JSON.parse(data.reload));
+            });
+
+	    ishout.on('changeColors', function(data) {
+				//console.log("Coucou hibou");
+				//alert("Change Color");
+				//resestAndAddObj("/media/{{ user.id }}.obj", "", "human");
+				//alert("/media/{{ user.id }}.dae")
+				//console.log(data.verticesColor);
+				//console.log(data.verticesColor);
+				//console.log(X.length);
+				modifyAllColorF(JSON.parse(data.verticesColor));
+            });
+            ishout.init();
+            console.log(ishout);
+
+    </script>
+
+
+</head>
+
+<body>
+{% if user.is_authenticated %}
+
+    <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="{% url 'dev:index' %}" style="height:100px"><img src="{% static 'web/files/images/logo.png' %}" ></a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right" >
+               <ul class="nav navbar-nav">
+                    <li><a href="{% url 'dev:model' %}">Generate Models</a></li>
+                    <li><a href="{% url 'dev:help' %}">Aide</a></li>
+                    <li><a href="{% url 'dev:contact' %}">Contact</a></li>
+                    <li><a href="{% url 'dev:account' %}">Mon compte</a></li>
+                    <li><a href="{% url 'dev:fitting' %}">Fitting</a></li>
+
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="">{{ user.email }}</a>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Gestion <span class="caret"></span></a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a href="#">Mes informations</a></li>
+                            <li><a href="{% url 'dev:logout' %}">Déconnexion</a></li>
+                            <li class="divider"></li>
+                            <li>
+                                <h6>
+                                    <span class="btn-default glyphicon glyphicon-minus"></span>
+                                    Mes models
+                                </h6>
+                            </li>
+
+                            <li class="divider"></li>
+                            <li>
+                                <h6>
+                                    <span class="btn-default glyphicon glyphicon-minus"></span>
+                                    Ajouter un model
+                                </h6>
+
+                                <form class="navbar-form navbar-left" role="search">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" placeholder="Nom" style="width:70%">
+                                        <button type="submit" class="btn-default glyphicon glyphicon-plus"></button>
+                                    </div>
+                                </form>
+                            </li>
+                        </ul>
+                     </li>
+                </ul>
+          </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+{% else %}
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1" style="size:90px">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{% url 'dev:index' %}" style="height:100px"><img src="{% static 'web/files/images/logo.png' %}" ></a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1 navbar-fixed-top">
+            <ul class="nav navbar-nav navbar-right " style="height:100px">
+                <li><a href="{% url 'dev:help' %}">Aide</a></li>
+                <li><a href="{% url 'dev:contact' %}">Contact</a></li>
+                <li><a data-toggle="modal" data-target="#login"><button class="btn btn-primary">Sign in</button></a></li>
+                <li><a data-toggle="modal" data-target="#inscription"><button class="btn btn-primary">Sign up</button></a></li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container-fluid -->
+</nav>
+{% endif %}
+
+
+{% block content %}
+
+{% endblock %}
+
+</body>
+</html>

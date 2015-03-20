@@ -1,0 +1,387 @@
+{% extends "dev/base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+
+
+<div class="container">
+    
+	<div class="header-wrapper">
+        <div class="container-fluid">
+            <div class="row-fluid" style="margin-bottom:5px; margin-left:30px;">
+                <div id=button">
+                    <button id="buttonReset" class="btn btn-primary"> Reset Camera  </button>
+                    <button id="buttonLeft" class="btn btn-primary"> Left Camera  </button>
+                </div>
+            </div>
+
+            <div class="row-fluid">
+                <div class="col-md-8" style="margin-bottom:10px;">
+                    <!-- Div contenant le rendu WebGl -->
+
+                    <div class="centervideo" , id="rendererWEBGL">
+                    </div>
+
+                </div>
+                <div class="col-md-4">
+                    <div class="well rightsidebar sm-gutter" >
+                        <div class="panel panel-default">
+                            <div class="panel-heading"><big><b>Vos choix</b></big></div>
+                            <table id="listing" class="table">
+                                <thead>
+                                <tr>
+                                <th>Marque</th>
+                                <th>Vêtement</th>
+                                <th>Taille</th>
+
+
+                                <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    <div>
+                                        <form name = "fittingScript" action="/fittingScript" method="post" id="main-form">
+                                            <tr>
+                                                <td id="id_brand" data-title="Marque">MANERA</td>
+                                                <td id="id_clothe" data-title="Vêtement">WetSuit-15</td>
+                                                <td id="id_size" data-title="Taille">
+                                                    <select class="form-control" style="width:100%" id="id_size_choice">
+                                                        <option value="0">S</option>
+                                                        <option value="1">M</option>
+                                                        <option value="2">L</option>
+                                                        <option value="3">XL</option>
+                                                        <option value="4">Perfect</option>
+                                                        <option value="5">BAD</option>
+                                                    </select></td>
+                                                <td data-title="">
+                                                    <button class="btn btn-primary">Valider</button>
+                                                </td>
+                                            </tr>
+                                        </form>
+                                        <script type="text/javascript">
+                                            $('form[name="fittingScript"]').on("submit", function (e) {
+                                                console.log("Here");
+                                                e.preventDefault();
+                                                $.ajax({
+                                                    type: "POST",
+                                                    url: "/fittingScript",
+                                                    data: {
+                                                        "brand" : $("#listing #id_brand").text(),
+                                                        "clothe" : $("#listing #id_clothe").text(),
+                                                        "size": $("#listing #id_size #id_size_choice").val()
+                                                        }
+                                                });
+                                            })
+                                        </script>
+                                    </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</div>
+</div>
+
+	<script type="text/javascript" src="{% static 'web/js/index.js' %}"></script>
+	
+	<!-- Bibliotheque Three.js	 -->
+	<script type="text/javascript" src="{% static 'web/js/three/build/three.js' %}"></script>
+	<!-- Gestion de la souris -->
+	<script type="text/javascript" src="{% static 'web/js/three/examples/js/controls/OrbitControls.js' %}"></script>
+
+	<!-- Pour la detection de si on peut utiliser le WebGL -->
+	<script type="text/javascript" src="{% static 'web/js/three/examples/js/Detector.js' %}"></script>
+	<!-- Pour le chargement d'objet collada -->
+	<script type="text/javascript" src="{% static 'web/js/three/examples/js/loaders/ColladaLoader.js' %}"></script>
+
+
+    
+  
+	<script>
+	
+		//Affiche un message si pas de WebGL disponible
+		if (!Detector.webgl){
+			Detector.addGetWebGLMessage();
+			}
+
+		var divWebGL;
+		var camera, scene, renderer, object;
+		var particleLight, pointLight, directionalLight;
+		var sceneDae, skinBase, skin;
+
+		//Permet de charger un fichier .dae (Collada)
+		var loader = new THREE.ColladaLoader();
+		//TODO : fichier a refaire
+		loader.options.convertUpAxis = true;
+
+        //FilePath a changer en fonction des choix faits
+        //TODO: A MODIFIER
+		loader.load("../private/user_models/{{user.id}}/{{user.id}}.dae", function ( collada ) {
+		//loader.load("/zatfits/user_models/{{ user.id }}/{{user.id}}.dae", function ( collada ) {
+			sceneDae = collada.scene;
+
+			sceneDae.traverse(function ( child ) {
+				if(child.geometry){
+					console.log(skinBase);
+					if(skinBase == undefined){
+					  skinBase = child;
+					  skin = skinBase;
+					}
+					child.geometry.computeFaceNormals();
+					child.geometry.computeVertexNormals();
+					child.matrixAutoUpdate = true;
+					child.updateMatrix();
+				}
+			} );
+
+			console.log(sceneDae);
+			console.log(skinBase);
+
+			
+			sceneDae.updateMatrix();
+ 
+			/*
+			for(i=0; i < skinBase.geometry.vertices.length; ++ i){
+				 skinBase.geometry.vertices[i] = skinBase.geometry.vertices[i].multiplyScalar(0.15);
+			}
+			*/
+			
+			console.log(skinBase.geometry.faces.length)
+			
+			for(i = 0; i < skinBase.geometry.faces.length; i = i + 1){
+				skinBase.geometry.faces[i].vertexColors[0] = new THREE.Color().setRGB(80, 80, 80);
+				skinBase.geometry.faces[i].vertexColors[1] = new THREE.Color().setRGB(80, 80, 80);
+				skinBase.geometry.faces[i].vertexColors[2] = new THREE.Color().setRGB(80, 80, 80);
+			}
+			
+			skinBase.geometry.colorsNeedUpdate = true;
+
+			init();
+			
+			$('#buttonReset').click(function(){
+				cameraControls.reset();
+			});
+			
+			$('#buttonLeft').click(function(){
+				cameraControls.target.copy( cameraControls.target0 );
+				cameraControls.object.position.copy(new THREE.Vector3(3, 0, 0));
+				cameraControls.update();
+			});
+			
+			animate();
+		} );
+		
+		
+		//Positon de la camera
+		var positionCameraInitX = 0;
+		var positionCameraInitY = 0;
+		var positionCameraInitZ = 3;
+		
+		//Poisition de la scene
+		var positionSceneX = 0;
+		var positionSceneY = -1;
+		var positionSceneZ = 0;
+		
+		function init() {
+		
+			if(Detector.webgl){
+				renderer = new THREE.WebGLRenderer({
+					antialias		: true,
+					preserveDrawingBuffer	: true
+				});
+			}else{
+				renderer	= new THREE.CanvasRenderer();
+			}
+
+			renderer.setClearColor( 0xEEEEEE, 1 );
+			divWebGL = document.getElementById("rendererWEBGL");
+			height = divWebGL.offsetHeight;
+			width = divWebGL.offsetWidth;
+			renderer.setSize(width, height);
+			renderer.shadowMapEnabled = true;
+			renderer.shadowMapSoft = true;
+			divWebGL.appendChild(renderer.domElement);
+
+			// Scene
+			scene = new THREE.Scene();
+			//scene.fog = new THREE.FogExp2( 0xEEEEEE, 0.030);
+			
+			// Camera
+			camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
+			camera.position.set(positionCameraInitX, positionCameraInitY, positionCameraInitZ);
+			camera.lookAt(new THREE.Vector3(0, 0, 0));
+			scene.add(camera);
+			
+			// Camera Controls
+			cameraControls	= new THREE.OrbitControls( camera, renderer.domElement );
+			cameraControls.rotateSpeed = 1.0;
+			cameraControls.zoomSpeed = 1.2;
+			cameraControls.panSpeed = 0.8;
+			cameraControls.minDistance = 2.5;
+			cameraControls.maxDistance = 5;
+			cameraControls.noZoom = false;
+			cameraControls.noPan = true;
+			cameraControls.staticMoving = true;
+			cameraControls.dynamicDampingFactor = 0.3;
+			cameraControls.addEventListener( 'change', render );
+
+			// Grid
+			
+			var size = 16, step = 0.2;
+			var geometry = new THREE.Geometry();
+			var material = new THREE.LineBasicMaterial( { color: 0x0099DD} );
+			for ( var i = - size; i <= size; i += step ) {
+				geometry.vertices.push( new THREE.Vector3( - size, - 0.04, i ) );
+				geometry.vertices.push( new THREE.Vector3(   size, - 0.04, i ) );
+				geometry.vertices.push( new THREE.Vector3( i, - 0.04, - size ) );
+				geometry.vertices.push( new THREE.Vector3( i, - 0.04,   size ) );
+			}
+			var line = new THREE.Line( geometry, material, THREE.LinePieces );
+			line.position.set(positionSceneX, positionSceneY, positionSceneZ);
+			scene.add( line );
+			
+			// Add the COLLADA
+			sceneDae.position.set(positionSceneX, positionSceneY, positionSceneZ);
+			scene.add(sceneDae);
+			
+			// Lights
+			var colorLight = 0xAAAAAA;
+			var intensity = 0.015;
+			
+		
+			lightOne = new THREE.PointLight(colorLight, intensity);
+			lightOne.position.set( 0, 200, 0 );
+			scene.add(lightOne);
+			//lightOne.castShadow = true;
+			
+			lightTwo = new THREE.PointLight(colorLight, intensity);
+			lightTwo.position.set( 0, 0, 200 );
+			scene.add(lightTwo);
+			
+			lightThree = new THREE.PointLight(colorLight, intensity);
+			lightThree.position.set( 0, 0, -200 );
+			scene.add(lightThree);
+			
+			lightFour = new THREE.PointLight(colorLight, intensity);
+			lightFour.position.set( 200, 0, 0 );
+			scene.add(lightFour);
+			
+			lightFive = new THREE.PointLight(colorLight, intensity);
+			lightFive.position.set( -200, 0, 0 );
+			scene.add(lightFive);
+
+            
+			window.addEventListener('resize', onWindowResize, false );
+
+ 			
+		}
+
+		function onWindowResize() {		
+			width = divWebGL.offsetWidth;
+			height = divWebGL.offsetHeight;
+				
+			camera.aspect = width / height;
+			camera.updateProjectionMatrix();
+			renderer.setSize(width, height);
+			
+			render();
+		}
+		
+		function animate() {	
+			
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+			camera.lookAt( scene.position );
+			renderer.render( scene, camera );
+		}
+			
+			
+		function modifyAllVertex(xyz){
+			console.log(xyz);
+			for(i=0; i < xyz.length; i = i + 1){
+				skinBase.geometry.vertices[i].x = xyz[i][0];
+				skinBase.geometry.vertices[i].y = xyz[i][2];
+				skinBase.geometry.vertices[i].z = -xyz[i][1];
+			}
+			skinBase.geometry.verticesNeedUpdate = true;
+			skinBase.geometry.facesNeedUpdate = true;
+			skinBase.geometry.normalsNeedUpdate = true;
+		}
+	/*
+		function modifyAllColorF(Vcolor){
+
+			for(i = 0; i < skinBase.geometry.faces.length; i = i + 1){
+				//console.log(skinBase.geometry.faces.length);
+				if ((Vcolor[3*skinBase.geometry.faces[i].a]>0) || (Vcolor[3*skinBase.geometry.faces[i].a+1]>0) || (Vcolor[3*skinBase.geometry.faces[i].a+1]>0))
+{
+				skinBase.geometry.faces[i].vertexColors[0] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].a], Vcolor[3*skinBase.geometry.faces[i].a+1], Vcolor[3*skinBase.geometry.faces[i].a+2]);
+}
+
+if ((Vcolor[3*skinBase.geometry.faces[i].b]>0) || (Vcolor[3*skinBase.geometry.faces[i].b+1]>0) ||(Vcolor[3*skinBase.geometry.faces[i].b+1]>0))
+{
+				skinBase.geometry.faces[i].vertexColors[1] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].b], Vcolor[3*skinBase.geometry.faces[i].b+1], Vcolor[3*skinBase.geometry.faces[i].b+2]);
+}
+if ((Vcolor[3*skinBase.geometry.faces[i].c]>0) || (Vcolor[3*skinBase.geometry.faces[i].c+1]>0) ||(Vcolor[3*skinBase.geometry.faces[i].c+1]>0))
+{
+				skinBase.geometry.faces[i].vertexColors[2] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].c], Vcolor[3*skinBase.geometry.faces[i].c+1], Vcolor[3*skinBase.geometry.faces[i].c+2]);
+}
+								
+				
+			}
+				console.log(skinBase.geometry.faces[1000]);
+				console.log(skinBase.geometry.faces[1000].a);
+				console.log(skinBase.geometry.faces.length);
+
+
+			skinBase.geometry.colorsNeedUpdate = true;
+		}*/
+		
+		function modifyAllColorF(Vcolor){
+
+			for(i = 0; i < skinBase.geometry.faces.length; i = i + 1){
+				
+				
+			
+			
+			
+				if ((Vcolor[3*skinBase.geometry.faces[i].a]>0) || 
+					(Vcolor[3*skinBase.geometry.faces[i].a+ 1]>0) || 
+					(Vcolor[3*skinBase.geometry.faces[i].a + 2]>0)){
+				skinBase.geometry.faces[i].vertexColors[0] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].a], Vcolor[3*skinBase.geometry.faces[i].a+1], Vcolor[3*skinBase.geometry.faces[i].a+2]);
+}
+
+if ((Vcolor[3*skinBase.geometry.faces[i].b]>0) || (Vcolor[3*skinBase.geometry.faces[i].b+1]>0) ||(Vcolor[3*skinBase.geometry.faces[i].b+1]>0))
+{
+				skinBase.geometry.faces[i].vertexColors[1] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].b], Vcolor[3*skinBase.geometry.faces[i].b+1], Vcolor[3*skinBase.geometry.faces[i].b+2]);
+}
+if ((Vcolor[3*skinBase.geometry.faces[i].c]>0) || (Vcolor[3*skinBase.geometry.faces[i].c+1]>0) ||(Vcolor[3*skinBase.geometry.faces[i].c+1]>0))
+{
+				skinBase.geometry.faces[i].vertexColors[2] = new THREE.Color().setRGB(Vcolor[3*skinBase.geometry.faces[i].c], Vcolor[3*skinBase.geometry.faces[i].c+1], Vcolor[3*skinBase.geometry.faces[i].c+2]);
+}
+								
+				
+			}
+				console.log(skinBase.geometry.faces[1000]);
+				console.log(skinBase.geometry.faces[1000].a);
+				console.log(skinBase.geometry.faces.length);
+
+
+			skinBase.geometry.colorsNeedUpdate = true;
+		}
+	
+
+
+
+	</script>
+ {% endblock %}
+
+
+
+    
+

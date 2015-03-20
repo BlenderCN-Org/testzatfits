@@ -1,0 +1,4 @@
+Pour pouvoir ajouter des packages à un environnement (mainenv ou mhenv) il faut :
+  - ouvrir le fichier easy_install ou pip ou pip2.7 etc
+  - modifier la première ligne contenant le path du fichier par le votre
+  - puis lancer la commande ./pathPpourArriverAuFichierEasyinstall/easy_install nomDuPackage
